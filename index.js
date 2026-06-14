@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import connectDB from './config/db.js';
 import authRouter from './routes/authRoutes.js';
@@ -11,6 +13,6 @@ authRouter
 app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
-app.listen(3000, () => {
+app.listen(process.env.PORT || 3000, () => {
     console.log('Server is running on port 3000');
 })
