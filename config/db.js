@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
 const connectDB = async () => {
     try{
         await mongoose.connect(
-            'mongodb+srv://root:12345@skillbridge.bmnzbqh.mongodb.net/practice1?retryWrites=true&w=majority',
+            process.env.MONGODB,
         );
         console.log('MongoDB connected successfully');
     }

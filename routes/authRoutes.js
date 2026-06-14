@@ -3,7 +3,8 @@ import authMiddleware from '../middleware/authMiddleware.js';
 import {
     signup,
     login,
-    getme
+    getme,
+    refresh
 }
     from '../controllers/authController.js';
 
@@ -32,5 +33,10 @@ router.get(
     '/me',
     authMiddleware,
     getme
+);
+
+router.post(
+    '/refresh',
+    refresh
 );
 export default router;
