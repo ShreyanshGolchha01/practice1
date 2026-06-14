@@ -1,10 +1,12 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import cookieParser from 'cookie-parser';
 import express from 'express';
 import connectDB from './config/db.js';
 import authRouter from './routes/authRoutes.js';
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 connectDB();
 app.use(
 '/auth',

@@ -4,7 +4,8 @@ import {
     signup,
     login,
     getme,
-    refresh
+    refresh,
+    logout
 }
     from '../controllers/authController.js';
 
@@ -38,5 +39,10 @@ router.get(
 router.post(
     '/refresh',
     refresh
+);
+
+router.post(
+    '/logout',
+    logout
 );
 export default router;

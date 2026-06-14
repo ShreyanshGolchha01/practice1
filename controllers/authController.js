@@ -76,7 +76,12 @@ export const login =
                 { id: user._id },
                 process.env.REFRESH_SECRET,
             { expiresIn: "7d" })
-            res.status(200).json({ message: "Login success", accesstoken, refreshtoken });
+            res.cookie("refreshtoken", refreshtoken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            }).status(200).json({ accesstoken, message: "Login successful" });
         }
         catch(err){
             res.status(500).send(err.message);
@@ -98,22 +103,26 @@ export const getme =
 export const refresh =
     async (req, res) => {
         try {
-            const { refreshtoken } = req.body;
-            if (!refreshtoken) {
-                return res.status(400).send("Refresh token required");
+            const token = req.cookies.refreshtoken;
+            if (!token) {
+                return res.status(401).send("No token, authorization denied");
             }
-            jwt.verify(refreshtoken, process.env.REFRESH_SECRET, (err, decoded) => {
-                if (err) {
-                    return res.status(401).send("Invalid refresh token");
-                }
-                const accesstoken = jwt.sign(
-                    { id: decoded.id },
-                    process.env.JWT_SECRET,
-                    { expiresIn: "1h" }
-                );
-                res.status(200).json({ accesstoken });
-            });
-        } catch (err) {
-            res.status(500).send(err.message);
+            const decoded = jwt.verify(token, process.env.REFRESH_SECRET);
+            const accesstoken = jwt.sign(
+                { id: decoded.id },
+                process.env.JWT_SECRET,
+                { expiresIn: "1h" }
+            );
+            res.status(200).json({ accesstoken });
+        }
+        catch (err) {
+            res.status(401).send("Invalid token");
         }
     };
+export const logout = (req, res) => {
+    res.clearCookie("refreshtoken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict"
+    }).status(200).json({ message: "Logout successful" });
+};
