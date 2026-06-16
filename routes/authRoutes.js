@@ -10,7 +10,8 @@ import {
     logout,
     adminlogin,
     adminsignup,
-    uploadFile
+    uploadFile,
+    uploadSingleFile
 }
     from '../controllers/authController.js';
 
@@ -70,7 +71,7 @@ router.post(
     '/upload',
     authMiddleware,
     upload.single('file'),
-    uploadFile
+    uploadSingleFile
 );
 router.post(
     '/uploads',

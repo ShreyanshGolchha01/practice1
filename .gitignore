@@ -10,4 +10,4 @@ logs
 .idea
 .vscode
 package-lock.json
-uploads
+uploads/*
