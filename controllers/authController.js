@@ -34,6 +34,7 @@ export const signup =
             const user =
                 await User.create({
                     email,
+                    role: 'user',
                     password:
                         hashedPassword
                 });
@@ -69,11 +70,11 @@ export const login =
                 return res.status(400).send("Invalid credentials");
              }
              const accesstoken = jwt.sign(
-                { id: user._id },
+                { id: user._id, role: user.role },
                 process.env.JWT_SECRET,
             { expiresIn: "1h" })
             const refreshtoken = jwt.sign(
-                { id: user._id },
+                { id: user._id, role: user.role },
                 process.env.REFRESH_SECRET,
             { expiresIn: "7d" })
             res.cookie("refreshtoken", refreshtoken, {
@@ -109,7 +110,7 @@ export const refresh =
             }
             const decoded = jwt.verify(token, process.env.REFRESH_SECRET);
             const accesstoken = jwt.sign(
-                { id: decoded.id },
+                { id: decoded.id, role: decoded.role },
                 process.env.JWT_SECRET,
                 { expiresIn: "1h" }
             );
@@ -125,4 +126,55 @@ export const logout = (req, res) => {
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict"
     }).status(200).json({ message: "Logout successful" });
+};
+export const adminlogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email, role: 'admin' });
+        if (!user) {
+            return res.status(400).send("Invalid credentials");
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).send("Invalid credentials");
+        }
+        const accesstoken = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+        const refreshtoken = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.REFRESH_SECRET,
+            { expiresIn: "7d" }
+        );
+        res.cookie("refreshtoken", refreshtoken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        }).status(200).json({ accesstoken, message: "Admin login successful" });
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
+};
+export const adminsignup = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const userExists = await User.findOne({ email, role: 'admin' });
+        if (userExists) {
+            return res.status(400).send("Admin user exists");
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await User.create({
+            email,
+            role: 'admin',
+            password: hashedPassword
+        });
+        res.status(201).json({ message: "Admin signup success", user });
+    }
+    catch (err) {
+        res.status(500).send(err.message);
+    }
 };
