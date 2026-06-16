@@ -178,3 +178,13 @@ export const adminsignup = async (req, res) => {
         res.status(500).send(err.message);
     }
 };
+export const uploadFile = async (req, res) => {
+    try {
+        if (!req.files?.length) {
+            return res.status(400).send("No file uploaded");
+        }
+        res.json({ message: "File uploaded successfully", files: req.files || [req.file] });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+};

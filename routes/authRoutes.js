@@ -1,6 +1,7 @@
 import express from 'express';
 import authMiddleware from '../middleware/authMiddleware.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js';
 import {
     signup,
     login,
@@ -8,7 +9,8 @@ import {
     refresh,
     logout,
     adminlogin,
-    adminsignup
+    adminsignup,
+    uploadFile
 }
     from '../controllers/authController.js';
 
@@ -63,5 +65,17 @@ router.get(
     (req, res) => {
         res.json({ user: req.user, message: "Admin profile" });
     }
+);
+router.post(
+    '/upload',
+    authMiddleware,
+    upload.single('file'),
+    uploadFile
+);
+router.post(
+    '/uploads',
+    authMiddleware,
+    upload.array('files', 5),
+    uploadFile
 );
 export default router;
