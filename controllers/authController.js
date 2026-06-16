@@ -3,7 +3,7 @@ import User from '../models/userModel.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 export const signup =
-    async (req, res) => {
+    async (req, res, next) => {
         try {
             const {
                 email,
@@ -47,15 +47,11 @@ export const signup =
                 });
         }
         catch (err) {
-            res
-                .status(500)
-                .send(
-                    err.message
-                );
+            next(err);
         }
     };
 export const login =
-    async (req, res) => {
+    async (req, res, next) => {
         try{
             const { 
                 email,
@@ -85,11 +81,11 @@ export const login =
             }).status(200).json({ accesstoken, message: "Login successful" });
         }
         catch(err){
-            res.status(500).send(err.message);
+            next(err);
             }
         };
 export const getme =
-    async (req, res) => {
+    async (req, res, next) => {
         try {
             const user = await User.findById(req.user.id).select("-password");
             if (!user) {
@@ -97,16 +93,18 @@ export const getme =
             }
             res.status(200).json({ user });
         } catch (err) {
-            res.status(500).send(err.message);
+            next(err);
         }
     };
 
 export const refresh =
-    async (req, res) => {
+    async (req, res, next) => {
         try {
             const token = req.cookies.refreshtoken;
             if (!token) {
-                return res.status(401).send("No token, authorization denied");
+                const error = new Error("No token, authorization denied");
+                error.status = 401;
+                return next(error);
             }
             const decoded = jwt.verify(token, process.env.REFRESH_SECRET);
             const accesstoken = jwt.sign(
@@ -117,7 +115,7 @@ export const refresh =
             res.status(200).json({ accesstoken });
         }
         catch (err) {
-            res.status(401).send("Invalid token");
+            next(err);
         }
     };
 export const logout = (req, res) => {
@@ -127,16 +125,20 @@ export const logout = (req, res) => {
         sameSite: "strict"
     }).status(200).json({ message: "Logout successful" });
 };
-export const adminlogin = async (req, res) => {
+export const adminlogin = async (req, res, next) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email, role: 'admin' });
         if (!user) {
-            return res.status(400).send("Invalid credentials");
+            const error = new Error("Invalid credentials");
+            error.status = 400;
+            return next(error);
         }
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).send("Invalid credentials");
+            const error = new Error("Invalid credentials");
+            error.status = 400;
+            return next(error);
         }
         const accesstoken = jwt.sign(
             { id: user._id, role: user.role },
@@ -156,15 +158,17 @@ export const adminlogin = async (req, res) => {
         }).status(200).json({ accesstoken, message: "Admin login successful" });
     }
     catch (err) {
-        res.status(500).send(err.message);
+        next(err);
     }
 };
-export const adminsignup = async (req, res) => {
+export const adminsignup = async (req, res, next) => {
     try {
         const { email, password } = req.body;
         const userExists = await User.findOne({ email, role: 'admin' });
         if (userExists) {
-            return res.status(400).send("Admin user exists");
+            const error = new Error("Admin user exists");
+            error.status = 400;
+            return next(error);
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
@@ -175,26 +179,30 @@ export const adminsignup = async (req, res) => {
         res.status(201).json({ message: "Admin signup success", user });
     }
     catch (err) {
-        res.status(500).send(err.message);
+        next(err);
     }
 };
-export const uploadFile = async (req, res) => {
+export const uploadFile = async (req, res, next) => {
     try {
         if (!req.files?.length) {
-            return res.status(400).send("No file uploaded");
+            const error = new Error("No file uploaded");
+            error.status = 400;
+            return next(error);
         }
         res.json({ message: "File uploaded successfully", files: req.files || [req.file] });
     } catch (err) {
-        res.status(500).send(err.message);
+        next(err);
     }
 };
-export const uploadSingleFile = async (req, res) => {
+export const uploadSingleFile = async (req, res, next) => {
     try {
         if (!req.file) {
-            return res.status(400).send("No file uploaded");
+            const error = new Error("No file uploaded");
+            error.status = 400;
+            return next(error);
         }
         res.json({ message: "File uploaded successfully", file: req.file });
     } catch (err) {
-        res.status(500).send(err.message);
+        next(err);
     }
 };
